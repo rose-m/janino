@@ -100,6 +100,29 @@ class SimpleCompiler extends Cookable implements ISimpleCompiler {
         // than in files.
         final JavaFileManager fileManager = new ByteArrayJavaFileManager<JavaFileManager>(fm);
 
+        /**
+         * rosem: Modifications to add current ClassLoaderClasspath if available
+         */
+        List<String> options = new ArrayList<String>(2);
+        if (parentClassLoader instanceof URLClassLoader) {
+            URLClassLoader loader = (URLClassLoader) this.parentClassLoader;
+            String classpath = "";
+            for (URL url : loader.getURLs()) {
+                classpath += url.getPath() + File.pathSeparator;
+            }
+            options.add("-classpath");
+            options.add(classpath.substring(0, classpath.length() - 1));
+        }
+        options.add(this.debugSource
+                ? "-g:source" + (this.debugLines ? ",lines" : "") + (this.debugVars ? ",vars" : "")
+                : this.debugLines
+                ? "-g:lines" + (this.debugVars ? ",vars" : "")
+                : this.debugVars
+                ? "-g:vars"
+                : "-g:none"
+        );
+        /* // end */
+
         // Run the compiler.
         try {
             final CompileException[] caughtCompileException = new CompileException[1];
@@ -146,15 +169,7 @@ class SimpleCompiler extends Cookable implements ISimpleCompiler {
                         }
                     }
                 },
-                Collections.singletonList(                 // options
-                    this.debugSource
-                    ? "-g:source" + (this.debugLines ? ",lines" : "") + (this.debugVars ? ",vars" : "")
-                    : this.debugLines
-                    ? "-g:lines" + (this.debugVars ? ",vars" : "")
-                    : this.debugVars
-                    ? "-g:vars"
-                    : "-g:none"
-                ),
+                options,
                 null,                                      // classes
                 Collections.singleton(compilationUnit)     // compilationUnits
             ).call()) {
