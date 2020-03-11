@@ -28,6 +28,7 @@ package org.codehaus.commons.compiler.jdk;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -106,12 +107,12 @@ class SimpleCompiler extends Cookable implements ISimpleCompiler {
         List<String> options = new ArrayList<String>(2);
         if (parentClassLoader instanceof URLClassLoader) {
             URLClassLoader loader = (URLClassLoader) this.parentClassLoader;
-            String classpath = "";
+            StringJoiner classpath = new StringJoiner(File.pathSeparator);
             for (URL url : loader.getURLs()) {
-                classpath += url.getPath() + File.pathSeparator;
+                classpath.add(URLDecoder.decode(url.getPath(), StandardCharsets.UTF_8.name()));
             }
             options.add("-classpath");
-            options.add(classpath.substring(0, classpath.length() - 1));
+            options.add(classpath.toString());
         }
         options.add(this.debugSource
                 ? "-g:source" + (this.debugLines ? ",lines" : "") + (this.debugVars ? ",vars" : "")
